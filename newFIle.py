@@ -18,47 +18,47 @@ def quit(subject):
         plt.close()
 
 
-def image_grey():
+def image_grey(original_img):
     # Image conversion to black and white
-    grey = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
+    original_img = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 
     # Show the image
-    plt.title("Image Grey Scaled")
-    plt.imshow(grey, cmap='gray')
-    plt.show()
-    return grey
+    # plt.title("Image Grey Scaled")
+    # plt.imshow(original_img, cmap='gray')
+    # plt.show()
+    return original_img
 
 
-# The grey Image returned (calls function)
-grey_Image = image_grey()
+# # The grey Image returned (calls function)
+grey_Image = image_grey(image)
 
 
 # Function to Blur the image
-def image_blur():
+def image_blur(grey_image):
     # Bluring the image
-    Img_blur = cv.GaussianBlur(grey_Image, (5, 5), 0)
+    Img_blur = cv.GaussianBlur(grey_image, (5, 5), 0)
 
-    plt.title("Image Blurred")
-    plt.imshow(Img_blur, cmap='gray')
-    plt.show()
+    # plt.title("Image Blurred")
+    # plt.imshow(Img_blur, cmap='gray')
+    # plt.show()
     return Img_blur
 
 
 # The blurred Image returned (calls function)
-blur = image_blur()
+# blur = image_blur(grey_Image)
 
 
 # Canny Edge Detection - passing the blurred grey image
-def image_canny():
-    img_canny = cv.Canny(blur, 100, 200)
-    plt.title("Canny Image")
-    plt.imshow(img_canny, cmap='gray')
-    plt.show()
+def image_canny(blur_img):
+    img_canny = cv.Canny(blur_img, 100, 200)
+    # plt.title("Canny Image")
+    # plt.imshow(img_canny, cmap='gray')
+    # plt.show()
     return img_canny
 
 
 # Canny Image (calls function)
-canny = image_canny()
+# canny = image_canny(blur)
 
 
 # Function looks at just the white road lines.
@@ -76,9 +76,9 @@ def identify_lines():
     # A threshold to target only white colours in the image
     masked_image = cv.bitwise_and(grey_Image, white_mask)
 
-    plt.imshow(masked_image)
-    plt.title('Masked white image')
-    plt.show()
+    # plt.imshow(masked_image)
+    # plt.title('Masked white image')
+    # plt.show()
 
     return masked_image
 
@@ -87,10 +87,10 @@ lane_lines = identify_lines()
 
 
 # Declaring a region of interest within an image
-def region_of_interest(placeholder):
+def region_of_interest(img):
     # Getting height and width of the image we want to use
-    img_height = placeholder.shape[0]
-    img_width = placeholder.shape[1]
+    img_height = img.shape[0]
+    img_width = img.shape[1]
     print("Image Height", img_height)
     print("Image Width", img_width, '\n')
 
@@ -99,16 +99,16 @@ def region_of_interest(placeholder):
     ])
 
     # Creating a mask for the image
-    img_mask = np.zeros_like(placeholder)
+    img_mask = np.zeros_like(img)
 
     # Combining the mask
     img_mask = cv.fillPoly(img_mask, roi_triangle, 255)
-    img_mask = cv.bitwise_and(placeholder, img_mask)
+    img_mask = cv.bitwise_and(img, img_mask)
 
     # Displaying
-    plt.imshow(img_mask)
-    plt.title("Masked Image")
-    plt.show()
+    # plt.imshow(img_mask)
+    # plt.title("Masked ROI Image")
+    # plt.show()
 
     return img_mask
 
@@ -118,16 +118,17 @@ roi = region_of_interest(lane_lines)
 
 def hough_algorithm():
     # This is an array
-    lane_lines_array = cv.HoughLinesP(roi, rho=2, theta=3.642 / 180, threshold=100, minLineLength=40, maxLineGap=5)
+    hough_transform_output = cv.HoughLinesP(roi, rho=2, theta=3.642 / 180, threshold=100, minLineLength=40, maxLineGap=5)
 
     # Displaying
     # print(type(lane_lines_array))
     # print(lane_lines_array)
 
-    return lane_lines_array
+    return hough_transform_output
 
 
 lane_lines_array = hough_algorithm()
+
 
 def average_function(value):
     start = 0
@@ -139,19 +140,18 @@ def average_function(value):
     return average
 
 
-def display(masked_image, lines):
+def display(masked_image, output):
     black_img = np.zeros_like(masked_image)
 
     # Simple if statement to discover lines
-    if lines is not None:
-        for one_line in lines:
-            x1, y1, x2, y2 = one_line
+    if output is not None:
+        for line in output:
+            x1, y1, x2, y2 = line.reshape(4)
 
             # Drawing the line onto the black image
             cv.line(black_img, (x1, y1), (x2, y2), (255, 0, 0), 10)
 
     return black_img
-
 
 
 # This function averages the lines taken in from the hough_algorithm() function
@@ -164,7 +164,7 @@ def calc_lane_point(masked_image, lane_point_average):
     y1 = masked_image.shape[0]
 
     # This is how long we want the lines to be in our image
-    y2 = float(y1 * (3/5))
+    y2 = float(y1 * (3 / 5))
 
     x1 = float((y1 - y_intercept) // slope_of_line)
     x2 = float((y2 - y_intercept) // slope_of_line)
@@ -172,7 +172,7 @@ def calc_lane_point(masked_image, lane_point_average):
     return [x1, y1, x2, y2]
 
 
-def lane_line_average():
+def lane_line_average(declared_roi, hough_transform_lines):
     left_lane = []
     right_lane = []
 
@@ -235,5 +235,32 @@ def lane_line_average():
     return [right_lane_line, left_lane_line]
 
 
-lane_line_average()
+lane_line_average(roi, lane_lines_array)
 
+'''## THE CORE OF THE WORK ##'''
+# Step 1: Turn the image grey
+grey = image_grey(image)
+
+# Step 2: Add the blur
+blur_grey_img = image_blur(grey)
+
+# Step 3: Canny Edge
+edge_detection = image_canny(blur_grey_img)
+
+# Step 4: Isolate our area of interest
+region = region_of_interest(edge_detection)
+
+# Step 5: Hough Transformation
+output = hough_algorithm()
+
+# Step 6: Average the lines found
+avg = lane_line_average(region, output)
+
+# Step 6: Add blue lines to mask
+blue_lines = display(region, avg)
+
+# Step 7: Add the wights to the image
+blue_lanes = cv.addWeighted(image, 0.8, blue_lines, 1, 1)
+
+# Step 8: Display
+cv.imshow("should be lanes", blue_lanes)
