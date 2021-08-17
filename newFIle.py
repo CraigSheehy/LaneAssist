@@ -146,10 +146,12 @@ def display(masked_image, output):
     # Simple if statement to discover lines
     if output is not None:
         for line in output:
-            x1, y1, x2, y2 = line.reshape(4)
+            x1, y1, x2, y2 = line
 
             # Drawing the line onto the black image
             cv.line(black_img, (x1, y1), (x2, y2), (255, 0, 0), 10)
+    else:
+        print("No lines detected")
 
     return black_img
 
@@ -257,10 +259,10 @@ output = hough_algorithm()
 avg = lane_line_average(region, output)
 
 # Step 6: Add blue lines to mask
-blue_lines = display(region, avg)
+#blue_lines = display(region, avg)
 
 # Step 7: Add the wights to the image
-blue_lanes = cv.addWeighted(image, 0.8, blue_lines, 1, 1)
+#blue_lanes = cv.addWeighted(image, 0.8, blue_lines, 1, 1)
 
 # Step 8: Display
-cv.imshow("should be lanes", blue_lanes)
+#cv.imshow("should be lanes", blue_lanes)
