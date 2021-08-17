@@ -7,6 +7,7 @@ from tqdm import tqdm_notebook  # Google notebook
 
 # Read the image
 image = cv.imread("images/Straight Vertical/image0000.png")
+plt.title("This the stock image")
 plt.imshow(image)
 plt.show()
 
@@ -94,7 +95,7 @@ def region_of_interest(placeholder):
     print("Image Width", img_width, '\n')
 
     roi_triangle = np.array([
-        [(0, img_height), (440, 216), (490, 216), (img_width, img_height)]
+        [(0, 478), (440, 216), (490, 216), (img_width, img_height)]
     ])
 
     # Creating a mask for the image
@@ -128,13 +129,52 @@ def hough_algorithm():
 
 lane_lines_array = hough_algorithm()
 
+def average_function(value):
+    start = 0
+    for i in value:
+        start = start + i
+
+    average = start / len(value)
+
+    return average
+
+
+def display(masked_image, lines):
+    black_img = np.zeros_like(masked_image)
+
+    # Simple if statement to discover lines
+    if lines is not None:
+        for one_line in lines:
+            x1, y1, x2, y2 = one_line
+
+            # Drawing the line onto the black image
+            cv.line(black_img, (x1, y1), (x2, y2), (255, 0, 0), 10)
+
+    return black_img
+
+
 
 # This function averages the lines taken in from the hough_algorithm() function
 # It finds the average slope and y intercepts per line segment
 # Displaying one slide line
-def average_of_lines():
-    left_average = []
-    right_average = []
+def calc_lane_point(masked_image, lane_point_average):
+    slope_of_line, y_intercept = lane_point_average
+
+    # This is the image height of the given image we pass
+    y1 = masked_image.shape[0]
+
+    # This is how long we want the lines to be in our image
+    y2 = float(y1 * (3/5))
+
+    x1 = float((y1 - y_intercept) // slope_of_line)
+    x2 = float((y2 - y_intercept) // slope_of_line)
+
+    return [x1, y1, x2, y2]
+
+
+def lane_line_average():
+    left_lane = []
+    right_lane = []
 
     for line in lane_lines_array:
         # Array from hough transformation
@@ -157,28 +197,43 @@ def average_of_lines():
         print("x1_array_numpy", x1_array_numpy)
         print("y1_array_numpy", y1_array_numpy)
         print("x2_array_numpy", x2_array_numpy)
-        print("y2_array_numpy", y2_array_numpy)
+        print("y2_array_numpy", y2_array_numpy, "\n")
 
         # Polynomial fit (finds the least square polynominal fit)
         # (best fitting curve to a given set of points)
         # using x1, x2, y1, y2
         polyfit_value = np.polyfit((x1, x2), (y1, y2), 1)
         print("polyfit_value = ", polyfit_value)
-        print("polyfit_value[0] (slope_of_line_seg) = ", polyfit_value[0])
-        print("polyfit_value[1] (y_intercept) = ", polyfit_value[1], '\n')
 
         slope_of_line_seg = polyfit_value[0]
         y_intercept = polyfit_value[1]
+        print("polyfit_value[0] (slope_of_line_seg) = ", polyfit_value[0])
+        print("polyfit_value[1] (y_intercept) = ", polyfit_value[1], '\n')
 
         if slope_of_line_seg < 0:
-            left_average.append((slope_of_line_seg, y_intercept))
+            # If the slope is < 0 add to left_lines array
+            left_lane.append((slope_of_line_seg, y_intercept))
         else:
-            right_average.append((slope_of_line_seg, y_intercept))
+            # else add to right_lines array
+            right_lane.append((slope_of_line_seg, y_intercept))
 
     # We expect left line to start with NEGATIVE slope
-    print("Left Slope Average = ", left_average)
-    print("Right Slope Average = ", right_average, '\n')
+    print("Left Line Values [NEGATIVE SLOPE] = ", left_lane)
+    print("Right Line Values [POSITIVE SLOPE] = ", right_lane, '\n')
+
+    # Averaging the values we got from left_lane, right_lane tuple arrays
+    # Axis=0 computes the mean value over flattened array, along with rows
+    left_lane_average = np.mean(left_lane, axis=0)
+    right_lane_average = np.mean(right_lane, axis=0)
+    print("Left lane average number: ", left_lane_average)
+    print("Right lane average number: ", right_lane_average, "\n")
+
+    # Adding the points to all masked image
+    right_lane_line = calc_lane_point(roi, right_lane_average)
+    left_lane_line = calc_lane_point(roi, left_lane_average)
+
+    return [right_lane_line, left_lane_line]
 
 
+lane_line_average()
 
-average_of_lines()
