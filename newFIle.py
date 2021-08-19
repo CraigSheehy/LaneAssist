@@ -3,13 +3,28 @@ import os
 import cv2 as cv
 import matplotlib.pyplot as plt
 import numpy as np
-from tqdm import tqdm_notebook  # Google notebook
 
-# Read the image
-image = cv.imread("images/Straight Vertical/image0000.png")
-plt.title("This the stock image")
-plt.imshow(image)
-plt.show()
+
+def read_images():
+    global name
+    path = 'images/Straight Vertical/'
+
+    for name in os.listdir(path):
+        if name.endswith(".png") or name.endswith(".jpg"):
+            print(name)
+            cv.waitKey(300)
+
+            # Read the image
+            image = cv.imread("images/Straight Vertical/" + name)
+            plt.title("This the stock image")
+            plt.imshow(image)
+            plt.show()
+        else:
+            continue
+    return image
+
+
+image = read_images()
 
 
 # Press 'Q' to close window
@@ -155,7 +170,7 @@ def display(masked_image, output):
             print("y2 ", y2)
 
             # Drawing the line onto the black image
-            cv.line(black_img, (x1, y1), (x2, y2), (255, 0, 0), 9)
+            cv.line(black_img, (x1, y1), (x2, y2), (0, 0, 255), 9)
     else:
         print("No lines detected")
 
