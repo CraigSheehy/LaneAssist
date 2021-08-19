@@ -118,7 +118,8 @@ roi = region_of_interest(lane_lines)
 
 def hough_algorithm():
     # This is an array
-    hough_transform_output = cv.HoughLinesP(roi, rho=2, theta=3.642 / 180, threshold=100, minLineLength=40, maxLineGap=5)
+    hough_transform_output = cv.HoughLinesP(roi, rho=2, theta=3.642 / 180, threshold=100, minLineLength=40,
+                                            maxLineGap=5)
 
     # Displaying
     # print(type(lane_lines_array))
@@ -141,46 +142,33 @@ def average_function(value):
 
 
 def display(masked_image, output):
-    black_img = np.zeros_like(masked_image)
+    black_img = np.zeros_like(masked_image, 'uint8')
 
     # Simple if statement to discover lines
     if output is not None:
-        for line in output:
-            x1, y1, x2, y2 = line
+        for single_line in output:
+            x1, y1, x2, y2 = single_line
+
+            print("x1 ", x1)
+            print("y1 ", y1)
+            print("x2 ", x2)
+            print("y2 ", y2)
 
             # Drawing the line onto the black image
-            cv.line(black_img, (x1, y1), (x2, y2), (255, 0, 0), 10)
+            cv.line(black_img, (x1, y1), (x2, y2), (255, 0, 0), 9)
     else:
         print("No lines detected")
 
     return black_img
 
 
-# This function averages the lines taken in from the hough_algorithm() function
-# It finds the average slope and y intercepts per line segment
-# Displaying one slide line
-def calc_lane_point(masked_image, lane_point_average):
-    slope_of_line, y_intercept = lane_point_average
-
-    # This is the image height of the given image we pass
-    y1 = masked_image.shape[0]
-
-    # This is how long we want the lines to be in our image
-    y2 = float(y1 * (3 / 5))
-
-    x1 = float((y1 - y_intercept) // slope_of_line)
-    x2 = float((y2 - y_intercept) // slope_of_line)
-
-    return [x1, y1, x2, y2]
-
-
 def lane_line_average(declared_roi, hough_transform_lines):
     left_lane = []
     right_lane = []
 
-    for line in lane_lines_array:
+    for line in hough_transform_lines:
         # Array from hough transformation
-        # print(line)
+        print(line)
         x1, y1, x2, y2 = line.reshape(4)
 
         # print("x1: ", x1)
@@ -234,14 +222,32 @@ def lane_line_average(declared_roi, hough_transform_lines):
     right_lane_line = calc_lane_point(roi, right_lane_average)
     left_lane_line = calc_lane_point(roi, left_lane_average)
 
-    return [right_lane_line, left_lane_line]
+    return [left_lane_line, right_lane_line]
 
 
-lane_line_average(roi, lane_lines_array)
+# This function averages the lines taken in from the hough_algorithm() function
+# It finds the average slope and y intercepts per line segment
+# Displaying one slide line
+def calc_lane_point(masked_image, lane_point_average):
+    slope_of_line, y_intercept = lane_point_average
+
+    # This is the image height of the given image we pass
+    y1 = masked_image.shape[0]
+
+    # This is how long we want the lines to be in our image
+    y2 = int(y1 * (3 / 5))
+
+    x1 = int((y1 - y_intercept) // slope_of_line)
+    x2 = int((y2 - y_intercept) // slope_of_line)
+
+    return [x1, y1, x2, y2]
+
 
 '''## THE CORE OF THE WORK ##'''
+img_copy = np.copy(image)
+
 # Step 1: Turn the image grey
-grey = image_grey(image)
+grey = image_grey(img_copy)
 
 # Step 2: Add the blur
 blur_grey_img = image_blur(grey)
@@ -253,16 +259,18 @@ edge_detection = image_canny(blur_grey_img)
 region = region_of_interest(edge_detection)
 
 # Step 5: Hough Transformation
-output = hough_algorithm()
+output = cv.HoughLinesP(region, rho=2, theta=3.642 / 180, threshold=100, minLineLength=40, maxLineGap=5)
 
 # Step 6: Average the lines found
-avg = lane_line_average(region, output)
+avg = lane_line_average(img_copy, output)
 
 # Step 6: Add blue lines to mask
-#blue_lines = display(region, avg)
+blue_lines = display(img_copy, avg)
 
 # Step 7: Add the wights to the image
-#blue_lanes = cv.addWeighted(image, 0.8, blue_lines, 1, 1)
+add_weights = cv.addWeighted(img_copy, 0.8, blue_lines, 1, 1)
 
 # Step 8: Display
-#cv.imshow("should be lanes", blue_lanes)
+plt.imshow(add_weights)
+plt.title("Please work")
+plt.show()
