@@ -4,28 +4,32 @@ import cv2 as cv
 import matplotlib.pyplot as plt
 import numpy as np
 
-
 def read_images():
     global name
     path = 'images/Straight Vertical/'
 
     for name in os.listdir(path):
         if name.endswith(".png") or name.endswith(".jpg"):
-            print(name)
-            cv.waitKey(300)
+            # name.__str__()
+            #print(name)
 
             # Read the image
-            image = cv.imread("images/Straight Vertical/" + name)
-            plt.title("This the stock image")
-            plt.imshow(image)
-            plt.show()
+            image = 'images/Straight Vertical/' + name #cv.imread("images/Straight Vertical/" + name)
+            array_of_image_urls = [image]
+            #print(array_of_image_urls)
+            image = cv.imread(image)
+            cv.imshow("Row Stock Image", image)
+            cv.waitKey(400)
+            break
         else:
             continue
     return image
 
 
 image = read_images()
-
+# plt.imshow(image)
+# plt.title("Stock Image")
+# plt.show()
 
 # Press 'Q' to close window
 def quit(subject):
@@ -35,7 +39,7 @@ def quit(subject):
 
 def image_grey(original_img):
     # Image conversion to black and white
-    original_img = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
+    original_img = cv.cvtColor(original_img, cv.COLOR_BGR2GRAY)
 
     # Show the image
     # plt.title("Image Grey Scaled")
@@ -43,9 +47,6 @@ def image_grey(original_img):
     # plt.show()
     return original_img
 
-
-# # The grey Image returned (calls function)
-grey_Image = image_grey(image)
 
 
 # Function to Blur the image
@@ -74,11 +75,12 @@ def image_canny(blur_img):
 
 # Canny Image (calls function)
 # canny = image_canny(blur)
-
+# The grey Image returned (calls function)
+grey_Image = image_grey(image)
 
 # Function looks at just the white road lines.
 # Using HSV Colourspace (Hue, Saturation, Value)
-def identify_lines():
+def identify_lines(img):
     original_img = cv.cvtColor(image, cv.COLOR_BGR2HSV)
 
     # Identifying the white line using HSV placing into np.array
@@ -89,7 +91,7 @@ def identify_lines():
     white_mask = cv.inRange(original_img, lower_white, upper_white)
 
     # A threshold to target only white colours in the image
-    masked_image = cv.bitwise_and(grey_Image, white_mask)
+    masked_image = cv.bitwise_and(img, white_mask)
 
     # plt.imshow(masked_image)
     # plt.title('Masked white image')
@@ -98,7 +100,7 @@ def identify_lines():
     return masked_image
 
 
-lane_lines = identify_lines()
+lane_lines = identify_lines(grey_Image)
 
 
 # Declaring a region of interest within an image
@@ -252,8 +254,8 @@ def calc_lane_point(masked_image, lane_point_average):
     # This is how long we want the lines to be in our image
     y2 = int(y1 * (3 / 5))
 
-    x1 = int((y1 - y_intercept) // slope_of_line)
-    x2 = int((y2 - y_intercept) // slope_of_line)
+    x1 = int((y1 - y_intercept) / slope_of_line)
+    x2 = int((y2 - y_intercept) / slope_of_line)
 
     return [x1, y1, x2, y2]
 
@@ -289,3 +291,5 @@ add_weights = cv.addWeighted(img_copy, 0.8, blue_lines, 1, 1)
 plt.imshow(add_weights)
 plt.title("Please work")
 plt.show()
+
+read_images()
