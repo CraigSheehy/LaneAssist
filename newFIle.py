@@ -1,32 +1,56 @@
-import re
+import glob
 import os
 import cv2 as cv
 import matplotlib.pyplot as plt
 import numpy as np
 
+
 def read_images():
     global name
-    path = 'images/Straight Vertical/'
+    path = 'images/Busy Town/'
 
     for name in os.listdir(path):
         if name.endswith(".png") or name.endswith(".jpg"):
             # name.__str__()
-            #print(name)
+            # print(name)
 
             # Read the image
-            image = 'images/Straight Vertical/' + name #cv.imread("images/Straight Vertical/" + name)
+            image = 'images/Busy Town/' + name  # cv.imread("images/Straight Vertical/" + name)
+
             array_of_image_urls = [image]
-            #print(array_of_image_urls)
+            # print(array_of_image_urls)
             image = cv.imread(image)
-            cv.imshow("Row Stock Image", image)
-            cv.waitKey(400)
+            cv.imshow("Raw Stock Image", image)
             break
+
+            # Destroy window when pressing Q
+            cv.waitKey(0)  # & 0xFF == ord('q')
+            cv.destroyAllWindows()
         else:
             continue
     return image
 
 
+def create_video():
+    img_array = []
+    for filename in glob.glob('images/Busy Town/*.png'):
+        img = cv.imread(filename)
+        H, W, layers = img.shape
+        size = (W, H)
+        img_array.append(img)
+
+    video_output = cv.VideoWriter('video.avi', cv.VideoWriter_fourcc(*'DIVX'), 15, size)
+
+    for i in range(len(img_array)):
+        video_output.write(img_array[i])
+    video_output.release()
+
+
+create_video()
+
 image = read_images()
+
+
 # plt.imshow(image)
 # plt.title("Stock Image")
 # plt.show()
@@ -46,7 +70,6 @@ def image_grey(original_img):
     # plt.imshow(original_img, cmap='gray')
     # plt.show()
     return original_img
-
 
 
 # Function to Blur the image
@@ -77,6 +100,7 @@ def image_canny(blur_img):
 # canny = image_canny(blur)
 # The grey Image returned (calls function)
 grey_Image = image_grey(image)
+
 
 # Function looks at just the white road lines.
 # Using HSV Colourspace (Hue, Saturation, Value)
@@ -252,7 +276,7 @@ def calc_lane_point(masked_image, lane_point_average):
     y1 = masked_image.shape[0]
 
     # This is how long we want the lines to be in our image
-    y2 = int(y1 * (3 / 5))
+    y2 = int(y1 * (3 / 4))
 
     x1 = int((y1 - y_intercept) / slope_of_line)
     x2 = int((y2 - y_intercept) / slope_of_line)
@@ -260,7 +284,21 @@ def calc_lane_point(masked_image, lane_point_average):
     return [x1, y1, x2, y2]
 
 
+
+# cap = cv.VideoCapture("video.avi")
+# while (cap.isOpened()):
+#     _, frame = cap.read()
+#     canny_image = image_canny(frame)
+#     cropped_image = region_of_interest(canny_image)
+#     lines = cv.HoughLinesP(cropped_image, rho=2, theta=3.642/180, threshold=100, minLineLength=35, maxLineGap=5) # (roi, rho=2, theta=3.642 / 180, threshold=100, minLineLength=40, maxLineGap=5)
+#     averaged_lines = lane_line_average(frame, lines)
+#     line_image = display(frame, averaged_lines)
+#     combo_image = cv.addWeighted(frame, 0.8, line_image, 1, 1)
+#     cv.imshow("result", combo_image)
+#     cv.waitKey(1000)
+
 '''## THE CORE OF THE WORK ##'''
+#img_copy = cv.imread('images/Curve Road/image0006.png')
 img_copy = np.copy(image)
 
 # Step 1: Turn the image grey
@@ -275,11 +313,17 @@ edge_detection = image_canny(blur_grey_img)
 # Step 4: Isolate our area of interest
 region = region_of_interest(edge_detection)
 
+# plt.imshow(region)
+# plt.title("ROI")
+# plt.show()
+
 # Step 5: Hough Transformation
-output = cv.HoughLinesP(region, rho=2, theta=3.642 / 180, threshold=100, minLineLength=40, maxLineGap=5)
+output = cv.HoughLinesP(region, rho=2, theta=3.642/180, threshold=100, minLineLength=35, maxLineGap=5)
 
 # Step 6: Average the lines found
 avg = lane_line_average(img_copy, output)
+
+print("Average Lines", avg)
 
 # Step 6: Add blue lines to mask
 blue_lines = display(img_copy, avg)
